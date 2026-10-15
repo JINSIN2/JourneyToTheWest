@@ -51,7 +51,8 @@ a{color:var(--red)}
 .reader.open{display:block}
 .sheet{position:relative;max-width:900px;margin:0 auto;background:var(--paper2);background-image:repeating-linear-gradient(97deg,rgba(139,105,20,.03) 0 1px,transparent 1px 7px);box-shadow:0 20px 60px rgba(0,0,0,.5);padding:0 0 30px;animation:unroll .3s ease-out}
 @keyframes unroll{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
-.x{position:sticky;top:10px;float:right;margin:10px 10px 0 0;width:38px;height:38px;border-radius:50%;border:1px solid var(--gold);background:var(--paper);color:var(--red);font-size:18px;cursor:pointer;z-index:2}
+.xwrap{position:sticky;top:0;height:0;z-index:5;display:flex;justify-content:flex-end}
+.x{margin:10px 10px 0 0;width:38px;height:38px;border-radius:50%;border:1px solid var(--gold);background:rgba(243,234,214,.92);color:var(--red);font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .hero{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:26px;padding:28px 30px 10px}
 .hero .art{background:var(--paper3);border:1px solid rgba(197,160,90,.75);box-shadow:4px 5px 0 rgba(139,105,20,.15);align-self:start}
 .hero .art img{display:block;width:100%;height:auto}
@@ -128,6 +129,8 @@ a{color:var(--red)}
 footer{text-align:center;color:var(--ink2);font-size:13px;margin-top:40px}
 @media (max-width:640px){
   .mast h1{font-size:50px}.wrap{padding:0 14px 60px}
+  .reader{padding:0}.sheet{min-height:100%;box-shadow:none}
+  .x{width:34px;height:34px;font-size:16px;margin:8px 8px 0 0}
   .folio{grid-template-columns:1fr;gap:0}
   .folio .pic{min-height:0;aspect-ratio:4/3;border-right:0;border-bottom:1px solid rgba(197,160,90,.75)}
   .folio .pic.portrait{aspect-ratio:1/1}
@@ -164,7 +167,7 @@ footer{text-align:center;color:var(--ink2);font-size:13px;margin-top:40px}
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const sealCls = g => g === '측정불가' ? 'seal top' : /[?—]/.test(g || '—') ? 'seal q' : 'seal';
   const OPEN = /기본|외모|성격|정체성|^$|보상국|완자산|오계국|유리정|호산|화운동|차지국|뇌신대|서량|자모하|화염산|취운동|비구국|백무정|오래국|화과산|천계|33|능소/;
-  const img = (src, alt, cls) => { const i = new Image(); i.src = src; i.alt = alt || ''; i.loading = 'lazy'; if (cls) i.className = cls; i.onerror = () => i.remove(); return i; };
+  const img = (src, alt, cls, eager) => { const i = new Image(); i.loading = eager ? 'eager' : 'lazy'; i.src = src; i.alt = alt || ''; if (cls) i.className = cls; i.onerror = () => i.remove(); return i; };
   const inkFace = cls => { const d = $('div', (cls || '') + ' ink'); d.append($('span', 'st brush', '人相不明')); return d; };
   const items = DATA.groups.flatMap(g => g.items);
   const byId = Object.fromEntries(items.map(i => [i.id, i]));
@@ -205,9 +208,9 @@ footer{text-align:center;color:var(--ink2);font-size:13px;margin-top:40px}
   function show(id) {
     const it = byId[id]; if (!it) return close(true);
     sheet.replaceChildren();
-    const x = $('button', 'x', '✕'); x.setAttribute('aria-label', '닫기'); x.onclick = () => close(); sheet.append(x);
+    const xw = $('div', 'xwrap'); const x = $('button', 'x', '✕'); x.setAttribute('aria-label', '닫기'); x.onclick = () => close(); xw.append(x); sheet.append(xw);
     if (it.type === 'person') {
-      const hero = $('div', 'hero'); const art = $('div', 'art'); art.append(img(it.art || it.thumb, it.show));
+      const hero = $('div', 'hero'); const art = $('div', 'art'); art.append(img(it.art || it.thumb, it.show, '', true));
       const info = $('div'); info.append($('h2', 'brush', esc(it.show)), $('div', 'meta', `${esc(it.hanja)} · ${esc(it.title)}`), $('span', sealCls(it.grade), '등급 ' + esc(it.grade)));
       const first = it.secs[0];
       if (first && /기본/.test(first.t)) { const b = $('div', 'in'); b.style.marginTop = '14px'; b.innerHTML = first.h; info.append(b); }
@@ -217,7 +220,7 @@ footer{text-align:center;color:var(--ink2);font-size:13px;margin-top:40px}
     } else {
       const ban = $('div', 'banner');
       if (it.thumbs) { ban.style.display = 'grid'; ban.style.gridTemplateColumns = 'repeat(4,1fr)'; it.thumbs.forEach(s => ban.append(img(s, ''))); }
-      else ban.append(img(it.thumb, it.show));
+      else ban.append(img(it.thumb, it.show, '', true));
       ban.append($('div', 'cap', `<h2 class="brush">${esc(it.show)}</h2><div>${esc(it.hanja)} · ${esc(it.title)}</div>`)); sheet.append(ban);
       const body = $('div', 'body'); body.append(secHTML(it.secs));
       if (it.people?.length) {
